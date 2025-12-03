@@ -1,36 +1,38 @@
-from dataclasses import dataclass
 import random
 from copy import deepcopy
 
-
-@dataclass
-class Gene:
-    exam: int
-    time: int
+MUTATE_DOWN_PROBABILITY = 0.5
+POP_SIZE = 100
+MAX_GENERATIONS = 500
+MUTATION_RATE_BEGIN = 0.01
+MUTATION_RATE_END = 0.005
+CROSSOWER_PROB = 0.2  # 0.8 for elitism
+TOURNAMENT_K = 3
 
 
 class Genome:
-    def __init__(self, genes: list[Gene]):
-        self.genes = genes
+    def __init__(self, exam_time: list[int]):
+        self.time = exam_time
 
     def mutate(self, mutation_rate: float):
-        for gene in self.genes:
+        for exam_id, exam_time in enumerate(self.time):
             if random.random() < mutation_rate:
-                if gene.time == 0:
-                    gene.time = 1
+                if exam_time == 0:
+                    self.time[exam_id] = 1
                 else:
-                    gene.time += 1 if random.random() > 0.7 else -1
+                    self.time[exam_id] += 1 if random.random() > MUTATE_DOWN_PROBABILITY else -1
 
     def schedule(self) -> list[set[int]]:
-        max_time = max(gene.time for gene in self.genes)
+        # print(self.time)
+        # print(max(self.time))
+        max_time = max(self.time)
         time_to_exam = [set() for _ in range(max_time + 1)]
-        for gene in self.genes:
-            time_to_exam[gene.time].add(gene.exam)
+        for exam_id, exam_time in enumerate(self.time):
+            time_to_exam[exam_time].add(exam_id)
         return time_to_exam
 
-    def fitness(self) -> int:
+    def fitness(self, banned_list: list[set[int]]) -> int:
         # We will give -1000 point for each pair of exams that cant be held at the same time
-        global banned_list
         time_to_exam = self.schedule()
         fittness = 0
         for time in range(len(time_to_exam)):
@@ -53,29 +55,30 @@ class Genome:
     def remove_empty_spots(self):
         schedule = self.schedule()
         new_schedule = [i for i in schedule if i]
-        new_genome = []
+        max_time = max([max(i) for i in new_schedule])
+        new_genome = [0 for _ in range(max_time + 1)]
         for time in range(len(new_schedule)):
-            for exam in new_schedule[time]:
-                new_genome.append(Gene(exam, time))
-        self.genes = new_genome
+            for e in new_schedule[time]:
+                new_genome[e] = time
+        self.time = new_genome
 
 
-def random_genome(exam_ids: list[int]) -> Genome:
-    random.shuffle(exam_ids)
-    return Genome([Gene(exam, time) for time, exam in enumerate(exam_ids)])
-
+def random_genome(exam_number: int) -> Genome:
+    genome = list(range(exam_number))
+    random.shuffle(genome)
+    return Genome(genome)
 
 def recombination(parent1: Genome, parent2: Genome, recombination_rate: float) -> tuple[Genome, Genome]:
     if random.random() > recombination_rate:
         return deepcopy(parent1), deepcopy(parent2)
     child1, child2 = [], []
-    for gene1, gene2 in zip(parent1.genes, parent2.genes):
+    for time1, time2 in zip(parent1.time, parent2.time):
         if random.randrange(2):
-            child1.append(deepcopy(gene1))
-            child2.append(deepcopy(gene2))
+            child1.append(time1)
+            child2.append(time2)
         else:
-            child1.append(deepcopy(gene2))
-            child2.append(deepcopy(gene1))
+            child1.append(time2)
+            child2.append(time1)
     return Genome(child1), Genome(child2)
 
 def selection(population: list[Genome], fitnesses: list[int], k: int = 3) -> Genome:
@@ -91,7 +94,7 @@ def print_schedule(genome: Genome):
         print(f'{time}:', ' '.join([str(i) for i in time_to_exam[time]]))
 
 
-filename = 'problems/hec-s-92.stu'
+filename = 'problems/car-f-92.stu'  # 'problems/hec-s-92.stu'
 
 stu = []
 exam_to_students = {}
@@ -116,12 +119,12 @@ with open(filename, 'r') as f:
 exam_ids = list(exam_ids)
 
 
-def genetic_algorithm(pop_size: int = 50,
-                      max_generations: int = 200,
-                      crossover_prob: float = 0.8,
-                      mutation_rate_begin: float = 0.1,
-                      mutation_rate_end: float = 0.05,
-                      tournament_k: int = 3,
+def genetic_algorithm(pop_size: int = POP_SIZE,
+                      max_generations: int = MAX_GENERATIONS,
+                      crossover_prob: float = CROSSOWER_PROB,
+                      mutation_rate_begin: float = MUTATION_RATE_BEGIN,
+                      mutation_rate_end: float = MUTATION_RATE_END,
+                      tournament_k: int = TOURNAMENT_K,
                       verbose: bool = True):
     """
     Run the genetic algorithm and return:
@@ -131,7 +134,7 @@ def genetic_algorithm(pop_size: int = 50,
     """
     # 1) Initialise population
     global exam_ids
-    population: list[Genome] = [random_genome(exam_ids) for _ in range(pop_size)]
+    population: list[Genome] = [random_genome(len(exam_ids)) for _ in range(pop_size)]
 
     best_individual = None
     best_fitness = float("-inf")
@@ -141,7 +144,7 @@ def genetic_algorithm(pop_size: int = 50,
         # 2) Evaluate fitness
         for genome in population:
             genome.remove_empty_spots()
-        fitnesses = [ind.fitness() for ind in population]
+        fitnesses = [ind.fitness(banned_list) for ind in population]
 
         # 3) Update global best
         idx = max(range(len(population)), key=lambda i: fitnesses[i])
