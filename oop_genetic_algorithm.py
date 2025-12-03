@@ -1,11 +1,12 @@
 import random
 from copy import deepcopy
 
+random.seed(39)
 MUTATE_DOWN_PROBABILITY = 0.5
-POP_SIZE = 100
+POP_SIZE = 20
 MAX_GENERATIONS = 500
-MUTATION_RATE_BEGIN = 0.01
-MUTATION_RATE_END = 0.005
+MUTATION_RATE_BEGIN = 0.1
+MUTATION_RATE_END = 0.01
 CROSSOWER_PROB = 0.2  # 0.8 for elitism
 TOURNAMENT_K = 3
 
@@ -14,13 +15,24 @@ class Genome:
     def __init__(self, exam_time: list[int]):
         self.time = exam_time
 
-    def mutate(self, mutation_rate: float):
-        for exam_id, exam_time in enumerate(self.time):
+    def mutate(self, mutation_rate: float, banned_list: dict):
+        """Smart mutation that checks for hard conditions for the schedule"""
+        for exam_id in range(len(self.time)):
             if random.random() < mutation_rate:
-                if exam_time == 0:
-                    self.time[exam_id] = 1
-                else:
-                    self.time[exam_id] += 1 if random.random() > MUTATE_DOWN_PROBABILITY else -1
+                current_time = self.time[exam_id]
+
+                new_time = current_time + (1 if random.random() > MUTATE_DOWN_PROBABILITY else -1)
+                new_time = max(0, new_time)
+
+                conflicts = False
+                for other_exam in range(len(self.time)):
+                    if other_exam != exam_id and self.time[other_exam] == new_time:
+                        if other_exam in banned_list.get(exam_id, set()):
+                            conflicts = True
+                            break
+
+                if not conflicts:
+                    self.time[exam_id] = new_time
 
     def schedule(self) -> list[set[int]]:
         # print(self.time)
@@ -175,8 +187,8 @@ def genetic_algorithm(pop_size: int = POP_SIZE,
           p1 = selection(population, fitnesses, tournament_k)
           p2 = selection(population, fitnesses, tournament_k)
           c1, c2 = recombination(p1, p2, crossover_prob)
-          c1.mutate(current_mutation_rate)
-          c2.mutate(current_mutation_rate)
+          c1.mutate(current_mutation_rate, banned_list)
+          c2.mutate(current_mutation_rate, banned_list)
           new_population.append(c1)
           new_population.append(c2)
 
