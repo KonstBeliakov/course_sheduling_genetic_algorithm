@@ -1,7 +1,7 @@
 import random
 from copy import deepcopy
+import json
 
-random.seed(39)
 MUTATE_DOWN_PROBABILITY = 0.5
 POP_SIZE = 20
 MAX_GENERATIONS = 500
@@ -106,31 +106,6 @@ def print_schedule(genome: Genome):
         print(f'{time}:', ' '.join([str(i) for i in time_to_exam[time]]))
 
 
-filename = 'problems/car-f-92.stu'  # 'problems/hec-s-92.stu'
-
-stu = []
-exam_to_students = {}
-banned_list = {} # which exams could not be held at the same time
-exam_ids = set()
-
-with open(filename, 'r') as f:
-    for student, line in enumerate(f.readlines()):
-        exams = {int(i) for i in line.split()}
-        stu.append(exams)
-        for exam in exams:
-            exam_ids.add(exam)
-            if exam not in banned_list:
-                banned_list[exam] = set()
-            for exam2 in exams:
-                if exam != exam2:
-                    banned_list[exam].add(exam2)
-
-            if exam not in exam_to_students:
-                exam_to_students[exam] = set()
-            exam_to_students[exam].add(student)
-exam_ids = list(exam_ids)
-
-
 def genetic_algorithm(pop_size: int = POP_SIZE,
                       max_generations: int = MAX_GENERATIONS,
                       crossover_prob: float = CROSSOWER_PROB,
@@ -144,7 +119,7 @@ def genetic_algorithm(pop_size: int = POP_SIZE,
     - its fitness,
     - generation index when the optimum was first reached (or None if not reached).
     """
-    # 1) Initialise population
+    random.seed(39)
     global exam_ids
     population: list[Genome] = [random_genome(len(exam_ids)) for _ in range(pop_size)]
 
@@ -171,14 +146,6 @@ def genetic_algorithm(pop_size: int = POP_SIZE,
                 print_schedule(population[idx])
                 print('\n\n')
 
-        # 4) Check for perfect solution
-        if best_fitness == 0:
-            success_generation = gen
-            if verbose:
-                print(f"Solution found at generation {gen}!")
-            break
-
-        # 5) Create new population
         new_population: list[Genome] = []
 
         current_mutation_rate = (mutation_rate_end * (max_generations - gen) + mutation_rate_begin * gen) / max_generations
@@ -196,8 +163,37 @@ def genetic_algorithm(pop_size: int = POP_SIZE,
 
     return best_individual, best_fitness, success_generation
 
-# After you implement all TODOs:
-best, best_f, gen_succ = genetic_algorithm()
-print("Best fitness:", best_f)
-print("Success generation:", gen_succ)
-print_schedule(best)
+
+if __name__ == '__main__':
+    filename = 'problems/car-f-92.stu'  # 'problems/hec-s-92.stu'
+
+    stu = []
+    exam_to_students = {}
+    banned_list = {}  # which exams could not be held at the same time
+    exam_ids = set()
+
+    with open(filename, 'r') as f:
+        for student, line in enumerate(f.readlines()):
+            exams = {int(i) for i in line.split()}
+            stu.append(exams)
+            for exam in exams:
+                exam_ids.add(exam)
+                if exam not in banned_list:
+                    banned_list[exam] = set()
+                for exam2 in exams:
+                    if exam != exam2:
+                        banned_list[exam].add(exam2)
+
+                if exam not in exam_to_students:
+                    exam_to_students[exam] = set()
+                exam_to_students[exam].add(student)
+    exam_ids = list(exam_ids)
+
+
+    with open("best_params.json", "r") as f:
+        params = json.load(f)
+    print(f'Starting genetic algorithm with params: {params}')
+    best, best_f, gen_succ = genetic_algorithm(**params)
+    print("Best fitness:", best_f)
+    print("Success generation:", gen_succ)
+    print_schedule(best)

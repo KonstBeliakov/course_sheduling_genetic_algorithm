@@ -1,0 +1,7 @@
+{
+    "pop_size": 279,
+    "mutation_rate_begin": 0.4393080313063388,
+    "mutation_rate_end": 0.007496253380755332,
+    "crossover_prob": 0.10453288265950048,
+    "tournament_k": 12
+}

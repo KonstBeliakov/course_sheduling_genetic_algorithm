@@ -26,11 +26,13 @@ def objective(trial):
 
     return fitness
 
-study = optuna.create_study(direction="maximize")
-study.optimize(objective, n_trials=50)
 
-print("Best params:", study.best_params)
-print("Best fitness:", study.best_value)
+if __name__ == '__main__':
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective, n_trials=50)
 
-with open("best_params.json", "w", encoding='utf-8') as f:
-    json.dump(study.best_params, f, indent=4)
+    print("Best params:", study.best_params)
+    print("Best fitness:", study.best_value)
+
+    with open("best_params.json", "w", encoding='utf-8') as f:
+        json.dump(study.best_params, f, indent=4)
