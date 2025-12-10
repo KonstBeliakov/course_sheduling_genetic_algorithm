@@ -1,0 +1,36 @@
+MUTATE_DOWN_PROBABILITY = 0.5
+POP_SIZE = 100
+MAX_GENERATIONS = 500
+MUTATION_RATE_BEGIN = 0.01
+MUTATION_RATE_END = 0.005
+CROSSOWER_PROB = 0.2  # 0.8 for elitism
+TOURNAMENT_K = 3
+# Gives -156 fitness on the 'problems/car-f-92.stu'
+
+MUTATE_DOWN_PROBABILITY = 0.5
+POP_SIZE = 50
+MAX_GENERATIONS = 500
+MUTATION_RATE_BEGIN = 0.05
+MUTATION_RATE_END = 0.01
+CROSSOWER_PROB = 0.2  # 0.8 for elitism
+TOURNAMENT_K = 3
+# Gives -135 fitness on the 'problems/car-f-92.stu'
+
+random.seed(39)
+MUTATE_DOWN_PROBABILITY = 0.5
+POP_SIZE = 20
+MAX_GENERATIONS = 500
+MUTATION_RATE_BEGIN = 0.1
+MUTATION_RATE_END = 0.01
+CROSSOWER_PROB = 0.2  # 0.8 for elitism
+TOURNAMENT_K = 3
+# Gives -136 fitness on the 'problems/car-f-92.stu'
+
+{
+    "pop_size": 279,
+    "mutation_rate_begin": 0.4393080313063388,
+    "mutation_rate_end": 0.007496253380755332,
+    "crossover_prob": 0.10453288265950048,
+    "tournament_k": 12
+}
+# Gives -120 for 'problems/car-f-92.stu' and generation number=200 and random.seed(39)
